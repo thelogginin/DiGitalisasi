@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kelola User</title>
+
+<style>
+body{font-family:system-ui;margin:0;background:#f4f6f9}
+.header{background:#0066ff;color:#fff;padding:16px}
+.container{padding:20px}
+.card{background:#fff;padding:20px;border-radius:12px;margin-bottom:20px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
+button{padding:6px 10px;margin:2px}
+input,select{padding:8px;margin:4px;width:100%}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+<h2>Kelola User</h2>
+</div>
+
+<div class="container">
+
+<div class="card">
+<h3>Tambah User</h3>
+<input id="username" placeholder="Username">
+<input id="nama" placeholder="Nama">
+<input id="password" placeholder="Password">
+<select id="role">
+<option>USER</option>
+<option>ADMIN</option>
+</select>
+<button onclick="addUser()">Simpan</button>
+</div>
+
+<div class="card">
+<h3>Daftar User</h3>
+<table>
+<thead>
+<tr>
+<th>Username</th>
+<th>Nama</th>
+<th>Role</th>
+<th>Status</th>
+<th>Aksi</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+</div>
+
+</div>
+
+<script src="auth.js"></script>
+<script>
+protectPage("ADMIN");
+
+const API_URL = "URL_WEBAPP_ANDA";
+
+/* HASH PASSWORD */
+async function sha256(msg){
+ const buf = await crypto.subtle.digest("SHA-256",new TextEncoder().encode(msg));
+ return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+/* LOAD USERS */
+async function loadUsers(){
+ const f=new FormData();
+ f.append("action","listUsers");
+
+ const r=await fetch(API_URL,{method:"POST",body:f});
+ const j=await r.json();
+
+ const tbody=document.getElementById("tbody");
+ tbody.innerHTML="";
+
+ j.data.forEach(u=>{
+  tbody.innerHTML+=`
+   <tr>
+    <td>${u.username}</td>
+    <td>${u.nama}</td>
+    <td>${u.role}</td>
+    <td>${u.status}</td>
+    <td>
+      <button onclick="deleteUser('${u.id}')">Hapus</button>
+    </td>
+   </tr>`;
+ });
+}
+
+/* ADD USER */
+async function addUser(){
+
+ const passHash = await sha256(document.getElementById("password").value);
+
+ const f=new FormData();
+ f.append("action","addUser");
+ f.append("username",username.value);
+ f.append("password_hash",passHash);
+ f.append("nama",nama.value);
+ f.append("role",role.value);
+
+ await fetch(API_URL,{method:"POST",body:f});
+
+ loadUsers();
+}
+
+/* DELETE USER */
+async function deleteUser(id){
+
+ if(!confirm("Hapus user?")) return;
+
+ const f=new FormData();
+ f.append("action","deleteUser");
+ f.append("id",id);
+
+ await fetch(API_URL,{method:"POST",body:f});
+
+ loadUsers();
+}
+
+loadUsers();
+</script>
+
+</body>
+</html>

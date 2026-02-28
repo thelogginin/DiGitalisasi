@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard User</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#f4f6f9;
+}
+
+/* HEADER */
+.header{
+  background:#00a86b;
+  color:white;
+  padding:16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.header h2{
+  margin:0;
+  font-size:18px;
+}
+
+/* CONTAINER */
+.container{
+  padding:20px;
+}
+
+/* CARD */
+.card{
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:20px;
+  box-shadow:0 4px 10px rgba(0,0,0,.08);
+}
+
+/* BUTTON */
+button{
+  padding:10px 16px;
+  border:none;
+  border-radius:8px;
+  background:#00a86b;
+  color:white;
+  cursor:pointer;
+  font-size:14px;
+}
+
+button:hover{
+  background:#007a50;
+}
+
+/* MENU */
+.menu{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:16px;
+}
+
+.menu button{
+  padding:18px;
+  font-size:14px;
+}
+
+/* MOBILE */
+@media(max-width:600px){
+  .header h2{font-size:16px}
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h2>User Dashboard</h2>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<!-- CONTENT -->
+<div class="container">
+
+  <div class="card">
+    <h3>Selamat Datang, <span id="loginUser"></span></h3>
+    <p>Anda login sebagai <b>USER</b></p>
+  </div>
+
+  <div class="card">
+    <h3>Menu Pengguna</h3>
+
+    <div class="menu">
+      <button onclick="openPage('profile.html')">Profil Saya</button>
+      <button onclick="openPage('riwayat.html')">Riwayat</button>
+      <button onclick="openPage('form.html')">Isi Form</button>
+      <button onclick="alert('Fitur belum dibuat')">Bantuan</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Informasi</h3>
+    <p>Gunakan menu di atas untuk mengakses layanan yang tersedia.</p>
+  </div>
+
+</div>
+
+<!-- AUTH (WAJIB — PROTEKSI HALAMAN) -->
+<script src="auth.js"></script>
+<script>
+  protectPage("ADMIN"); // atau USER
+</script>
+
+</body>
+</html>

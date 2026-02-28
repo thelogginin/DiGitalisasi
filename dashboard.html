@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard</title>
+
+<style>
+body{font-family:system-ui;margin:0;background:#f4f6f9}
+.header{
+  background:#0066ff;color:white;padding:16px;
+  display:flex;justify-content:space-between;
+}
+.card{
+  margin:20px;padding:20px;background:white;
+  border-radius:12px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <div>Dashboard</div>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<div class="card">
+  <h3 id="nama"></h3>
+  <p>Login Berhasil ✅</p>
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbybI3JKrj4UeeZgPfK_ekId-poUfP58tD6DrMp6M9LZXUx-tELzGpu0ff4LQQt6XDPy5w/exec";
+
+
+/* CEK SESSION */
+async function check(){
+  const token=localStorage.getItem("token");
+
+  if(!token){
+    window.location="index.html";
+    return;
+  }
+
+  const form=new FormData();
+  form.append("action","check");
+  form.append("token",token);
+
+  const res=await fetch(API_URL,{method:"POST",body:form});
+  const data=await res.json();
+
+  if(!data.status){
+    localStorage.clear();
+    window.location="index.html";
+    return;
+  }
+
+  document.getElementById("nama").innerText=
+    "Halo, "+data.user.nama;
+}
+
+check();
+
+/* LOGOUT */
+async function logout(){
+  const token=localStorage.getItem("token");
+
+  const form=new FormData();
+  form.append("action","logout");
+  form.append("token",token);
+
+  await fetch(API_URL,{method:"POST",body:form});
+
+  localStorage.clear();
+  window.location="index.html";
+}
+</script>
+
+</body>
+</html>
