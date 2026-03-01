@@ -2,7 +2,8 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Permissions-Policy" content="camera=*, geolocation=*">
 <script src="https://unpkg.com/html5-qrcode"></script>
 <title>Dashboard User</title>
 
@@ -265,22 +266,21 @@ function startScanner(){
 
   html5QrCode = new Html5Qrcode("reader");
 
-  Html5Qrcode.getCameras().then(devices => {
+  const config = {
+    fps: 10,
+    qrbox: 250
+  };
 
-    if(devices && devices.length){
-
-      html5QrCode.start(
-        devices[0].id,
-        { fps: 10, qrbox: 250 },
-        onScanSuccess
-      );
-
-      scanning = true;
-      document.getElementById("scanStatus").innerText="Scanner aktif...";
-    }
-
+  html5QrCode.start(
+    { facingMode: "environment" }, // paksa kamera belakang
+    config,
+    onScanSuccess
+  ).then(()=>{
+    scanning = true;
+    document.getElementById("scanStatus").innerText="Scanner aktif...";
   }).catch(err=>{
     alert("Tidak bisa akses kamera");
+    console.log(err);
   });
 }
 
@@ -328,19 +328,29 @@ function sendAbsensi(){
 /* ================= KIRIM KE GAS ================= */
 async function submitAbsensi(lat,lng){
 
-  const f = new FormData();
-  f.append("action","absensi");
-  f.append("token",localStorage.getItem("token"));
-  f.append("lat",lat);
-  f.append("lng",lng);
+  const params = new URLSearchParams();
+  params.append("action","absensi");
+  params.append("token",localStorage.getItem("token"));
+  params.append("lat",lat);
+  params.append("lng",lng);
 
-  const res = await fetch(API_URL,{method:"POST",body:f});
-  const data = await res.json();
+  const res = await fetch(API_URL,{
+    method: "POST",
+    headers:{
+      "Content-Type":"application/x-www-form-urlencoded"
+    },
+    body: params.toString(),
+    redirect: "follow"
+  });
 
-  if(data.status){
-    document.getElementById("scanStatus").innerText=data.message;
-  }else{
-    document.getElementById("scanStatus").innerText="Gagal absensi";
+  const text = await res.text();
+  console.log("RESPONSE:", text);
+
+  try{
+    const data = JSON.parse(text);
+    document.getElementById("scanStatus").innerText = data.message;
+  }catch(e){
+    document.getElementById("scanStatus").innerText = "Server tidak merespon";
   }
 }
 </script>
