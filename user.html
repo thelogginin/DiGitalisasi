@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://unpkg.com/html5-qrcode"></script>
 <title>Dashboard User</title>
 
 <style>
@@ -58,17 +59,33 @@ button:hover{
   background:#007a50;
 }
 
-/* MENU */
-.menu{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-  gap:16px;
+
+/* Panel Menu */
+/* TAB MENU */
+.tab-menu{
+  display:flex;
+  gap:8px;
+  border-bottom:2px solid #eee;
+  margin-bottom:15px;
 }
 
-.menu button{
-  padding:18px;
-  font-size:14px;
+.tab{
+  padding:10px 16px;
+  border:none;
+  background:#e9ecef;
+  cursor:pointer;
+  border-radius:8px 8px 0 0;
 }
+
+.tab.active{
+  background:#00a86b;
+  color:white;
+}
+
+.tab-pane{
+  padding:10px 5px;
+}
+
 
 /* MOBILE */
 @media(max-width:600px){
@@ -95,13 +112,53 @@ button:hover{
 
   <div class="card">
     <h3>Menu Pengguna</h3>
+    <div class="tab-menu">
+  <button class="tab active" onclick="openTab('profil')">Profil Saya</button>
+  <button class="tab" onclick="openTab('riwayat')">Riwayat</button>
+  <button class="tab" onclick="openTab('form')">SCAN QR</button>
+  <button class="tab" onclick="openTab('bantuan')">Bantuan</button>
+</div>
 
-    <div class="menu">
-      <button onclick="openPage('profile.html')">Profil Saya</button>
-      <button onclick="openPage('riwayat.html')">Riwayat</button>
-      <button onclick="openPage('form.html')">Isi Form</button>
-      <button onclick="alert('Fitur belum dibuat')">Bantuan</button>
-    </div>
+<div class="tab-content">
+
+  <!-- PROFIL -->
+	<div id="tabProfil" class="tab-pane">
+	  <p><b>Nama :</b> <span id="pNama"></span></p>
+	  <p><b>Username :</b> <span id="pUsername"></span></p>
+	  <p><b>Jabatan :</b> <span id="pJabatan"></span></p>
+	  <p><b>No. HP :</b> <span id="pNohp"></span></p>
+	  <p><b>Role :</b> <span id="pRole"></span></p>
+	  <p><b>Status :</b> <span id="pStatus"></span></p>
+	</div>
+
+  <!-- RIWAYAT -->
+  <div id="tabRiwayat" class="tab-pane" style="display:none">
+    <p>Belum ada riwayat.</p>
+  </div>
+
+  <!-- FORM -->
+  <div id="tabForm" class="tab-pane" style="display:none">
+  <h3>Scan QR Absensi</h3>
+  <div id="reader" style="width:300px"></div>
+  <p id="scanStatus">Menunggu scan...</p>
+  <button onclick="startScanner()">Aktifkan Kamera</button>
+  <button onclick="stopScanner()">Stop Kamera</button>
+</div>
+
+  <!-- BANTUAN -->
+  <div id="tabBantuan" class="tab-pane" style="display:none">
+    <h3>Halaman User</h3>
+    <p>Halaman ini bisa digunakan untuk:</p>
+    <ul>
+      <li>✔ TAB PROFIL</li>
+	  <p>Untuk Melihat Data Diri (Profil) Secara Singkat</p>
+      <li>✔ Monitoring aktivitas sistem</li>
+      <li>✔ Validasi / approval (jika nanti ditambahkan)</li>
+      <li>✔ Akses read-only tanpa mengubah data</li>
+    </ul>
+  </div>
+
+</div>
   </div>
 
   <div class="card">
@@ -114,7 +171,150 @@ button:hover{
 <!-- AUTH (WAJIB — PROTEKSI HALAMAN) -->
 <script src="auth.js"></script>
 <script>
-  protectPage("ADMIN"); // atau USER
+protectPage("USER");
+
+/* ================= TAB SWITCH ================= */
+function openTab(name){
+
+  const panes = {
+    profil  : "tabProfil",
+    riwayat : "tabRiwayat",
+    form    : "tabForm",
+    bantuan : "tabBantuan"
+  };
+
+  // sembunyikan semua
+  Object.values(panes).forEach(id=>{
+    document.getElementById(id).style.display="none";
+  });
+
+  // tampilkan yg dipilih
+  document.getElementById(panes[name]).style.display="block";
+
+  // reset active tab
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  event.target.classList.add("active");
+}
+
+/* ================= LOAD PROFIL ================= */
+async function loadProfile(){
+
+  const token = localStorage.getItem("token");
+
+  const f = new FormData();
+  f.append("action","check");
+  f.append("token",token);
+
+  const res = await fetch(API_URL,{method:"POST",body:f});
+  const data = await res.json();
+
+  if(!data.status){
+    alert("Session berakhir, silakan login ulang");
+    logout();
+    return;
+  }
+
+  const u = data.user;
+
+  document.getElementById("loginUser").innerText = u.nama;
+
+  document.getElementById("pNama").innerText     = u.nama;
+  document.getElementById("pUsername").innerText = u.username;
+  document.getElementById("pJabatan").innerText  = u.jabatan || "-";
+  document.getElementById("pNohp").innerText     = u.nohp || "-";
+  document.getElementById("pRole").innerText     = u.role;
+  document.getElementById("pStatus").innerText   = u.status;
+}
+loadProfile();
+
+let html5QrCode;
+let scanning = false;
+
+/* ================= START SCANNER ================= */
+function startScanner(){
+
+  if(scanning) return;
+
+  html5QrCode = new Html5Qrcode("reader");
+
+  Html5Qrcode.getCameras().then(devices => {
+
+    if(devices && devices.length){
+
+      html5QrCode.start(
+        devices[0].id,
+        { fps: 10, qrbox: 250 },
+        onScanSuccess
+      );
+
+      scanning = true;
+      document.getElementById("scanStatus").innerText="Scanner aktif...";
+    }
+
+  }).catch(err=>{
+    alert("Tidak bisa akses kamera");
+  });
+}
+
+/* ================= STOP SCANNER ================= */
+function stopScanner(){
+  if(html5QrCode){
+    html5QrCode.stop();
+    scanning=false;
+  }
+}
+
+/* ================= QR SUCCESS ================= */
+function onScanSuccess(decodedText){
+
+  if(decodedText !== "Log.In"){
+    document.getElementById("scanStatus").innerText="QR Tidak Valid!";
+    return;
+  }
+
+  stopScanner();
+
+  document.getElementById("scanStatus").innerText="QR Valid, mengirim absensi...";
+
+  sendAbsensi();
+}
+function sendAbsensi(){
+
+  if(!navigator.geolocation){
+    alert("GPS tidak didukung");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(pos=>{
+
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+
+    submitAbsensi(lat,lng);
+
+  },()=>{
+    alert("Aktifkan GPS terlebih dahulu");
+  });
+}
+
+/* ================= KIRIM KE GAS ================= */
+async function submitAbsensi(lat,lng){
+
+  const f = new FormData();
+  f.append("action","absensi");
+  f.append("token",localStorage.getItem("token"));
+  f.append("lat",lat);
+  f.append("lng",lng);
+
+  const res = await fetch(API_URL,{method:"POST",body:f});
+  const data = await res.json();
+
+  if(data.status){
+    document.getElementById("scanStatus").innerText=data.message;
+  }else{
+    document.getElementById("scanStatus").innerText="Gagal absensi";
+  }
+}
 </script>
 
 </body>
