@@ -4,7 +4,6 @@ const API_URL = "https://script.google.com/macros/s/AKfycbybI3JKrj4UeeZgPfK_ekId
 async function protectPage(requiredRole){
 
   const token = localStorage.getItem("token");
-
   if(!token){
     window.location = "index.html";
     return;
@@ -14,51 +13,35 @@ async function protectPage(requiredRole){
   form.append("action","check");
   form.append("token",token);
 
-  /* ⛔ penting: tambah timestamp supaya tidak di-cache */
-  form.append("_ts", Date.now());
-
-  let res;
-  try{
-    res = await fetch(API_URL,{
-      method:"POST",
-      body:form,
-
-      /* ⛔ WAJIB untuk Apps Script */
-      cache:"no-store",
-
-      /* ⛔ cegah reuse koneksi lama */
-      headers:{
-        "Pragma":"no-cache",
-        "Cache-Control":"no-cache"
-      }
-    });
-  }catch(err){
-    console.error("Network error", err);
-    alert("Koneksi gagal. Coba refresh.");
-    return;
-  }
+  const res = await fetch(API_URL,{
+    method:"POST",
+    body:form
+  });
 
   const data = await res.json();
 
   if(!data.status){
     localStorage.clear();
-    sessionStorage.clear();
     window.location = "index.html";
     return;
   }
 
-  /* ================= ROLE CHECK ================= */
-  if(requiredRole && data.user.role !== requiredRole){
-    alert("Tidak punya akses!");
+  if(requiredRole){
+
+  const allowed = Array.isArray(requiredRole)
+    ? requiredRole.map(r=>r.toUpperCase())
+    : [String(requiredRole).toUpperCase()];
+
+  if(!allowed.includes(String(data.user.role).toUpperCase())){
+    alert("Tidak punya akses");
     window.location = "index.html";
     return;
   }
+}
 
-  /* ================= TAMPILKAN USER ================= */
   const el = document.getElementById("loginUser");
   if(el) el.innerText = data.user.nama;
 }
-
 
 /* ================= LOGOUT ================= */
 async function logout(){
@@ -69,21 +52,13 @@ async function logout(){
     const form = new FormData();
     form.append("action","logout");
     form.append("token",token);
-    form.append("_ts", Date.now()); // anti cache
 
     await fetch(API_URL,{
       method:"POST",
-      body:form,
-      cache:"no-store",
-      headers:{
-        "Pragma":"no-cache",
-        "Cache-Control":"no-cache"
-      }
+      body:form
     });
   }
 
   localStorage.clear();
-  sessionStorage.clear();
-
-  window.location.replace("index.html");
+  window.location = "index.html";
 }
