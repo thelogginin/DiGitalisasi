@@ -98,22 +98,55 @@ button:hover{
 
 <!-- HEADER -->
 <div class="header">
-  <h2>User Dashboard</h2>
-  <button onclick="logout()">Logout</button>
+  <h2>Dashboard User</h2>
+  <div>
+    <b>( <span id="loginUser"></span> )</b>
+    <button onclick="logout()">Logout</button>
+  </div>
 </div>
 
 <!-- CONTENT -->
 <div class="container">
 
   <div class="card">
-    <h3>Selamat Datang, <span id="loginUser"></span></h3>
-    <p>Anda login sebagai <b>USER</b></p>
+<table border="0" width="65%">
+  <tr>
+	<td width="18%"><b>Nama Lengkap</b></td>
+    <td width="2%">:</td>
+	<td><span id="pNama"></span></td>
+  </tr>
+  <tr>
+	<td><b>Username</b></td>
+    <td>:</td>
+	<td><span id="pUsername"></span></td>
+  </tr>
+  <tr>
+	<td><b>Jabatan</b></td>
+    <td>:</td>
+	<td><span id="pJabatan"></span></td>
+  </tr>
+  <tr>
+	<td><b>No.HP</b></td>
+    <td>:</td>
+	<td><span id="pNohp"></span></td>
+  </tr>
+	<td><b>Role</b></td>
+    <td>:</td>
+	<td><span id="pRole"></span></td>
+  </tr>
+    <tr>
+	<td><b>Status</b></td>
+    <td>:</td>
+	<td><span id="pStatus"></span></td>
+  </tr>
+</table>
+
   </div>
 
   <div class="card">
     <h3>Menu Pengguna</h3>
     <div class="tab-menu">
-  <button class="tab active" onclick="openTab('profil')">Profil Saya</button>
+  <button class="tab active" onclick="openTab('profil')">ABSEN QR</button>
   <button class="tab" onclick="openTab('riwayat')">Riwayat</button>
   <button class="tab" onclick="openTab('form')">SCAN QR</button>
   <button class="tab" onclick="openTab('bantuan')">Bantuan</button>
@@ -123,12 +156,11 @@ button:hover{
 
   <!-- PROFIL -->
 	<div id="tabProfil" class="tab-pane">
-	  <p><b>Nama :</b> <span id="pNama"></span></p>
-	  <p><b>Username :</b> <span id="pUsername"></span></p>
-	  <p><b>Jabatan :</b> <span id="pJabatan"></span></p>
-	  <p><b>No. HP :</b> <span id="pNohp"></span></p>
-	  <p><b>Role :</b> <span id="pRole"></span></p>
-	  <p><b>Status :</b> <span id="pStatus"></span></p>
+	  <h3>Scan QR Absensi</h3>
+	  <div id="reader" style="width:300px"></div>
+	  <p id="scanStatus">Menunggu scan...</p>
+	  <button onclick="startScanner()">Aktifkan Kamera</button>
+	  <button onclick="stopScanner()">Stop Kamera</button>
 	</div>
 
   <!-- RIWAYAT -->
@@ -138,11 +170,7 @@ button:hover{
 
   <!-- FORM -->
   <div id="tabForm" class="tab-pane" style="display:none">
-  <h3>Scan QR Absensi</h3>
-  <div id="reader" style="width:300px"></div>
-  <p id="scanStatus">Menunggu scan...</p>
-  <button onclick="startScanner()">Aktifkan Kamera</button>
-  <button onclick="stopScanner()">Stop Kamera</button>
+Belum Ada
 </div>
 
   <!-- BANTUAN -->
