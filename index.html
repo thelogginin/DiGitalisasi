@@ -27,14 +27,15 @@ body{
 
 h2{margin-top:0;text-align:center;}
 
-input{
+.box-form input{
   width:100%;
   padding:12px;
   margin:8px 0;
-  border:1px solid #ddd;
+  box-sizing : border-box;
   border-radius:8px;
   font-size:16px;
 }
+
 
 button{
   width:100%;
@@ -54,6 +55,9 @@ button:hover{background:#004ecc;}
   margin-top:10px;
   font-size:14px;
 }
+
+
+
 </style>
 </head>
 
@@ -61,9 +65,16 @@ button:hover{background:#004ecc;}
 
 <div class="card">
 <h2>LOGIN</h2>
-
+<div class="box-form">
+<label>Username</label>
 <input id="username" placeholder="Username">
+</div>
+    
+<div class="box-form">
+<label>Password</label>
 <input id="password" type="password" placeholder="Password">
+</div>
+<input type="checkbox" onclick="showHide()">  Tampilkan Password<br><br>
 
 <button onclick="login()">Masuk</button>
 
@@ -71,83 +82,102 @@ button:hover{background:#004ecc;}
 </div>
 
 <script>
-/* ===== GANTI DENGAN URL WEB APP ===== */
 const API_URL = "https://script.google.com/macros/s/AKfycbybI3JKrj4UeeZgPfK_ekId-poUfP58tD6DrMp6M9LZXUx-tELzGpu0ff4LQQt6XDPy5w/exec";
 
-/* AUTO LOGIN CHECK */
+function routeByRole(role){
+
+  role = String(role).toUpperCase();
+
+  if(role === "ADMIN")  return "admin.html";
+  if(role === "KEPALA") return "kepala.html";
+  if(role === "USER")   return "user.html";
+
+  return "index.html"; // fallback
+}
+
+/* AUTO LOGIN */
 window.onload = async ()=>{
 
   const token = localStorage.getItem("token");
   if(!token) return;
 
-  const form = new FormData();
-  form.append("action","check");
-  form.append("token",token);
-  form.append("_ts",Date.now());
+  const f = new FormData();
+  f.append("action","check");
+  f.append("token",token);
 
-  const res = await fetch(API_URL,{
-    method:"POST",
-    body:form,
-    cache:"no-store"
-  });
+  const r = await fetch(API_URL,{method:"POST",body:f});
+  const d = await r.json();
 
-  const data = await res.json();
-
-  if(data.status){
-
-    if(data.user.role === "ADMIN"){
-      window.location.replace("admin.html");
-    }else{
-      window.location.replace("user.html");
-    }
-
+  if(d.status){
+    location.replace(routeByRole(d.user.role));
   }else{
     localStorage.clear();
   }
 };
 
-/* ===== SHA-256 HASH FUNCTION ===== */
-async function sha256(message) {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+/* HASH */
+async function sha256(msg){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(msg));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
 }
 
-/* ===== LOGIN FUNCTION ===== */
+/* LOGIN */
 async function login(){
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
 
-  const password_hash = await sha256(password);
+  const btn = document.querySelector("button");
+  btn.disabled = true;
+  btn.innerText = "Memproses...";
 
-  const form = new FormData();
-  form.append("action","login");
-  form.append("username",username);
-  form.append("password_hash",password_hash);
+  try{
 
-  const res = await fetch(API_URL,{
-    method:"POST",
-    body:form
-  });
+    const u = username.value;
+    const p = await sha256(password.value);
 
-  const data = await res.json();
-  
-		if(data.status){
+    const f = new FormData();
+    f.append("action","login");
+    f.append("username",u);
+    f.append("password_hash",p);
 
-	  localStorage.setItem("token", data.token);
-	  localStorage.setItem("role", data.role);
+    const r = await fetch(API_URL,{method:"POST",body:f});
+    const d = await r.json();
 
-	  if(data.role === "ADMIN"){
-		window.location.href = "admin.html";
-	  }else{
-		window.location.href = "user.html";
-	  }
+    if(d.status){
+      localStorage.setItem("token",d.token);
+      location.href = routeByRole(d.role);
+    }else{
+      msg.innerText = "❌ Login gagal";
+    }
 
-	}else{
-	  document.getElementById("msg").innerHTML="❌ Login gagal";
-	}
+  }catch(err){
+    msg.innerText = "⚠️ Server tidak merespon";
+  }
+
+  btn.disabled = false;
+  btn.innerText = "Masuk";
 }
+/* ENTER = LOGIN */
+document.addEventListener("keydown", function(e){
+
+  if(e.key === "Enter"){
+    const u = document.getElementById("username").value.trim();
+    const p = document.getElementById("password").value.trim();
+
+    // hanya login jika field sudah diisi
+    if(u && p){
+      login();
+    }
+  }
+
+});
+/* HIDE UNHIDE */
+function showHide() {
+  var inputan = document.getElementById("password");
+  if (inputan.type === "password") {
+    inputan.type = "text";
+  } else {
+    inputan.type = "password";
+  }
+} 
 </script>
 
 </body>
