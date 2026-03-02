@@ -343,6 +343,9 @@ async function submitAbsensi(lat,lng){
     params.append("lat",lat);
     params.append("lng",lng);
 
+    // ⬇ kirim flag default false
+    params.append("confirmEarly","0");
+
     const res = await fetch(API_URL,{
       method:"POST",
       headers:{
@@ -352,16 +355,41 @@ async function submitAbsensi(lat,lng){
     });
 
     const data = await res.json();
-    document.getElementById("scanStatus").innerText = data.message;
+
+    // ✅ SERVER MINTA KONFIRMASI
+    if(data.askEarly){
+      const ok = confirm("Belum waktu pulang.\nApakah ingin Pulang Cepat?");
+
+      if(ok){
+        params.set("confirmEarly","1");
+
+        const res2 = await fetch(API_URL,{
+          method:"POST",
+          headers:{
+            "Content-Type":"application/x-www-form-urlencoded"
+          },
+          body: params.toString()
+        });
+
+        const data2 = await res2.json();
+        document.getElementById("scanStatus").innerText = data2.message;
+      }else{
+        document.getElementById("scanStatus").innerText = "Batal pulang";
+      }
+
+    }else{
+      document.getElementById("scanStatus").innerText = data.message;
+    }
 
   }catch(err){
     document.getElementById("scanStatus").innerText = "Gagal kirim";
   }
 
-  setTimeout(()=> submitting=false, 3000); // cooldown 3 detik
+  setTimeout(()=> submitting=false,3000);
 }
 </script>
 
 </body>
 </html>
+
 
