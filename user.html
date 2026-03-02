@@ -258,6 +258,7 @@ loadProfile();
 
 let html5QrCode;
 let scanning = false;
+let confirmInProgress = false; // mencegah loop kirim ulang
 
 /* ================= START SCANNER ================= */
 function startScanner(){
@@ -306,6 +307,7 @@ function onScanSuccess(decodedText){
 
   sendAbsensi();
 }
+/******* Send ***********/
 function sendAbsensi(){
 
   if(!navigator.geolocation){
@@ -318,7 +320,7 @@ function sendAbsensi(){
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
 
-    submitAbsensi(lat,lng);
+    submitAbsensi(lat,lng,false);
 
   },()=>{
     alert("Aktifkan GPS terlebih dahulu");
@@ -326,13 +328,16 @@ function sendAbsensi(){
 }
 
 /* ================= KIRIM KE GAS ================= */
-async function submitAbsensi(lat,lng){
+async function submitAbsensi(lat,lng,forceEarly=false){
 
   const params = new URLSearchParams();
   params.append("action","absensi");
   params.append("token",localStorage.getItem("token"));
   params.append("lat",lat);
   params.append("lng",lng);
+
+  // kirim flag konfirmasi jika sudah disetujui user
+  params.append("forceEarly", forceEarly ? "1" : "0");
 
   const res = await fetch(API_URL,{
     method: "POST",
@@ -348,7 +353,33 @@ async function submitAbsensi(lat,lng){
 
   try{
     const data = JSON.parse(text);
+
+    // ===============================
+    // 🔴 JIKA SERVER MINTA KONFIRMASI
+    // ===============================
+    if(data.status === "confirm"){
+
+      if(confirm(data.message)){   // user tekan OK
+        confirmInProgress = true;
+
+        // kirim ulang sebagai FINAL
+        submitAbsensi(lat,lng,true);
+        return;
+      }else{
+        // user batal
+        confirmInProgress = false;
+        document.getElementById("scanStatus").innerText="Absen dibatalkan";
+        startScanner();
+        return;
+      }
+    }
+
+    // ===============================
+    // RESPONSE NORMAL
+    // ===============================
+    confirmInProgress = false;
     document.getElementById("scanStatus").innerText = data.message;
+
   }catch(e){
     document.getElementById("scanStatus").innerText = "Server tidak merespon";
   }
@@ -357,3 +388,4 @@ async function submitAbsensi(lat,lng){
 
 </body>
 </html>
+
