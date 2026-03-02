@@ -81,8 +81,8 @@ button:hover{
 
 <!-- HEADER -->
 <div class="header">
-  <h2>Admin Panel</h2>
-  <button onclick="logout()">Logout</button>
+  <h2>Panel Admin</h2>
+  <button onclick="logout()"><b>Logout</b></button>
 </div>
 
 <!-- CONTENT -->
@@ -112,10 +112,17 @@ button:hover{
 
 </div>
 
+
 <!-- AUTH SCRIPT (WAJIB ADA) -->
 <script src="auth.js"></script>
+
 <script>
-  protectPage("ADMIN"); // atau USER
+  protectPage("ADMIN");
+
+  function openPage(url){
+    // pindah halaman TANPA merusak session
+    window.location.href = url;
+  }
 </script>
 
 </body>
