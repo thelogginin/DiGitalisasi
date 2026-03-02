@@ -326,34 +326,42 @@ function sendAbsensi(){
 }
 
 /* ================= KIRIM KE GAS ================= */
+let submitting = false;
+
 async function submitAbsensi(lat,lng){
 
-  const params = new URLSearchParams();
-  params.append("action","absensi");
-  params.append("token",localStorage.getItem("token"));
-  params.append("lat",lat);
-  params.append("lng",lng);
+  if(submitting) return;
+  submitting = true;
 
-  const res = await fetch(API_URL,{
-    method: "POST",
-    headers:{
-      "Content-Type":"application/x-www-form-urlencoded"
-    },
-    body: params.toString(),
-    redirect: "follow"
-  });
-
-  const text = await res.text();
-  console.log("RESPONSE:", text);
+  document.getElementById("scanStatus").innerText = "Mengirim...";
 
   try{
-    const data = JSON.parse(text);
+
+    const params = new URLSearchParams();
+    params.append("action","absensi");
+    params.append("token",localStorage.getItem("token"));
+    params.append("lat",lat);
+    params.append("lng",lng);
+
+    const res = await fetch(API_URL,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/x-www-form-urlencoded"
+      },
+      body: params.toString()
+    });
+
+    const data = await res.json();
     document.getElementById("scanStatus").innerText = data.message;
-  }catch(e){
-    document.getElementById("scanStatus").innerText = "Server tidak merespon";
+
+  }catch(err){
+    document.getElementById("scanStatus").innerText = "Gagal kirim";
   }
+
+  setTimeout(()=> submitting=false, 3000); // cooldown 3 detik
 }
 </script>
 
 </body>
 </html>
+
