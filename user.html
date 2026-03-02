@@ -173,16 +173,16 @@ button:hover{
 
   </div>
 
-  <div class="card">
-    <h3>Menu Pengguna</h3>
-    <div class="tab-menu">
-  <button class="tab active" onclick="openTab('profil')">ABSEN QR</button>
-  <button class="tab" onclick="openTab('riwayat')">Riwayat</button>
-  <button class="tab" onclick="openTab('form')">SCAN QR</button>
-  <button class="tab" onclick="openTab('bantuan')">Bantuan</button>
-</div>
+	<div class="card">
+		<h3>Menu Pengguna</h3>
+		<div class="tab-menu">
+		<button class="tab active" onclick="openTab('profil', this)">ABSEN QR</button>
+		<button class="tab" onclick="openTab('riwayat', this)">Riwayat</button>
+		<button class="tab" onclick="openTab('form', this)">SCAN QR</button>
+		<button class="tab" onclick="openTab('bantuan', this)">Bantuan</button>
+		</div>
 
-<div class="tab-content">
+	<div class="tab-content">
 
  <!-- PROFIL -->
 	<div id="tabProfil" class="tab-pane">
@@ -249,7 +249,7 @@ Belum Ada
 protectPage("USER");
 
 /* ================= TAB SWITCH ================= */
-function openTab(name){
+function openTab(name, el){
 
   const panes = {
     profil  : "tabProfil",
@@ -258,19 +258,15 @@ function openTab(name){
     bantuan : "tabBantuan"
   };
 
-  // sembunyikan semua
   Object.values(panes).forEach(id=>{
     document.getElementById(id).style.display="none";
   });
 
-  // tampilkan yg dipilih
   document.getElementById(panes[name]).style.display="block";
 
-  // reset active tab
   document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-  event.target.classList.add("active");
+  el.classList.add("active");
 }
-
 /* ================= LOAD PROFIL ================= */
 async function loadProfile(){
 
@@ -460,7 +456,3 @@ function setujuEarly(){
 
 </body>
 </html>
-
-
-
-
