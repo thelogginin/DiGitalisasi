@@ -6,43 +6,140 @@
 
 <style>
 body{font-family:system-ui;margin:0;background:#f4f6f9}
-.header{background:#0066ff;color:#fff;padding:16px}
-.container{padding:20px}
-.card{background:#fff;padding:20px;border-radius:12px;margin-bottom:20px}
-table{width:100%;border-collapse:collapse}
+
+.header{
+  background:#0066ff;
+  color:#fff;
+  padding:16px;
+}
+
+/* FLEX HEADER */
+.header-left{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+/* BUTTON BACK */
+.btn-back{
+  background:#ffffff;
+  color:#0066ff;
+  border:none;
+  padding:6px 12px;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.btn-back:hover{
+  background:#e8f0ff;
+}
+
+.container{width:100%}
+.card{
+	background:#ffffe0;
+	padding:20px;
+	border-radius:12px;
+	margin-bottom:20px;
+	}
+table {
+	margin: 0 auto; /* Tengah secara horizontal */
+    width: 100%; /* Atur lebar tabel sesuai kebutuhan */
+    border-collapse: collapse; /* Opsional: agar border tidak ganda */
+}
+
 th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
-button{padding:6px 10px;margin:2px}
-input,select{padding:8px;margin:4px;width:100%}
+button{padding:6px 10px;margin:2px;cursor:pointer}
+
+input.error{
+ border:2px solid #ff4d4d;
+ background:#fff6f6;
+}
+
+.box-form input,select{
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  box-sizing : border-box;
+  border-radius:8px;
+  font-size:16px;
+}
+
+/* NOTIF */
+.toast{
+ position:fixed;
+ top:20px;
+ right:20px;
+ background:#333;
+ color:#fff;
+ padding:12px 18px;
+ border-radius:8px;
+ opacity:0;
+ transform:translateY(-20px);
+ transition:.3s;
+}
+.toast.show{
+ opacity:1;
+ transform:translateY(0);
+}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-<h2>Kelola User</h2>
+  <div class="header-left">
+    <button class="btn-back" onclick="goAdmin()">← Kembali</button>
+    <h2>Kelola User</h2>
+  </div>
 </div>
 
 <div class="container">
+	<div class="card">
+	<h3 id="formTitle">Tambah User</h3>
+		<div class="box-form">
+		<label>Pilih Status</label>
+		<select id="role">
+		<option>USER</option>
+		<option>KEPALA</option>
+		<option>ADMIN</option>
+		</select>
+		</div>
 
-<div class="card">
-<h3>Tambah User</h3>
-<input id="username" placeholder="Username">
-<input id="nama" placeholder="Nama">
-<input id="password" placeholder="Password">
-<select id="role">
-<option>USER</option>
-<option>ADMIN</option>
-</select>
-<button onclick="addUser()">Simpan</button>
+		<div class="box-form">
+		<input id="username" placeholder="Username">
+		</div>
+    
+		<div class="box-form">
+		<input id="nama" placeholder="Nama">
+		</div>
+		<div class="box-form">
+		<input id="jabatan" placeholder="Jabatan">
+		</div>
+		<div class="box-form">
+		<input id="nohp" placeholder="No. HP">
+		</div>
+		<div class="box-form">
+		<label>Password</label>
+		<input id="password" type="password" placeholder="Password">
+		</div>
+		<input type="checkbox" onclick="showHide()"> Tampilkan Password
+		<br><br>
+		<button onclick="saveUser()">Simpan</button>
+		<button onclick="resetForm()">Reset</button>
+	</div>
 </div>
 
 <div class="card">
 <h3>Daftar User</h3>
+
 <table>
 <thead>
 <tr>
 <th>Username</th>
 <th>Nama</th>
+<th>Jabatan</th>
+<th>No. HP</th>
 <th>Role</th>
 <th>Status</th>
 <th>Aksi</th>
@@ -50,26 +147,40 @@ input,select{padding:8px;margin:4px;width:100%}
 </thead>
 <tbody id="tbody"></tbody>
 </table>
+
 </div>
 
 </div>
+
+<div id="toast" class="toast"></div>
 
 <script src="auth.js"></script>
+
 <script>
 protectPage("ADMIN");
 
-const API_URL = "URL_WEBAPP_ANDA";
+let editId = null;
 
-/* HASH PASSWORD */
+/* ================= TOAST ================= */
+function showToast(msg){
+ const t=document.getElementById("toast");
+ t.innerText=msg;
+ t.classList.add("show");
+ setTimeout(()=>t.classList.remove("show"),3000);
+}
+
+/* ================= HASH ================= */
 async function sha256(msg){
  const buf = await crypto.subtle.digest("SHA-256",new TextEncoder().encode(msg));
  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
 }
 
-/* LOAD USERS */
+/* ================= LOAD USERS ================= */
 async function loadUsers(){
+
  const f=new FormData();
- f.append("action","listUsers");
+ f.append("action","listusers");
+ f.append("token",localStorage.getItem("token"));
 
  const r=await fetch(API_URL,{method:"POST",body:f});
  const j=await r.json();
@@ -79,50 +190,220 @@ async function loadUsers(){
 
  j.data.forEach(u=>{
   tbody.innerHTML+=`
-   <tr>
-    <td>${u.username}</td>
-    <td>${u.nama}</td>
-    <td>${u.role}</td>
-    <td>${u.status}</td>
-    <td>
-      <button onclick="deleteUser('${u.id}')">Hapus</button>
-    </td>
-   </tr>`;
+  <tr>
+   <td>${u.username}</td>
+   <td>${u.nama}</td>
+   <td>${u.jabatan || '-'}</td>
+   <td>${u.nohp || '-'}</td>
+   <td>${u.role}</td>
+   <td>${u.status}</td>
+   <td>
+     <button onclick="editUser(
+       '${u.id}',
+       '${u.username}',
+       '${u.nama}',
+       '${u.jabatan || ''}',
+       '${u.nohp || ''}',
+       '${u.role}'
+     )">Edit</button>
+     <button onclick="deleteUser('${u.id}')">Hapus</button>
+   </td>
+  </tr>`;
  });
 }
 
-/* ADD USER */
-async function addUser(){
+/* ================= EDIT ================= */
+function editUser(id,username,nama,jabatan,nohp,role){
+ editId=id;
 
- const passHash = await sha256(document.getElementById("password").value);
+ document.getElementById("formTitle").innerText="Edit User";
+ document.querySelector("button[onclick='saveUser()']").innerText="Update";
+
+ document.getElementById("username").value=username;
+ document.getElementById("nama").value=nama;
+ document.getElementById("jabatan").value=jabatan;
+ document.getElementById("nohp").value=nohp;
+ document.getElementById("role").value=role;
+
+ const pass = document.getElementById("password");
+ pass.value="";
+ pass.disabled=true;
+ pass.placeholder="Password tidak diubah";
+
+ showToast("Mode edit aktif");
+}
+
+/* ================= VALIDASI ================= */
+function validateForm(){
+
+  ["username","nama","password","jabatan","nohp"].forEach(id=>{
+    document.getElementById(id).classList.remove("error");
+  });
+
+  const usernameEl = document.getElementById("username");
+  const namaEl     = document.getElementById("nama");
+  const passEl     = document.getElementById("password");
+  const jabatanEl  = document.getElementById("jabatan");
+  const nohpEl     = document.getElementById("nohp");
+
+  const username = usernameEl.value.trim();
+  const nama     = namaEl.value.trim();
+  const password = passEl.value.trim();
+  const jabatan  = jabatanEl.value.trim();
+  const nohp     = nohpEl.value.trim();
+
+  if(!username){
+    showToast("Username wajib diisi");
+    usernameEl.classList.add("error");
+    usernameEl.focus();
+    return false;
+  }
+
+  if(!nama){
+    showToast("Nama wajib diisi");
+    namaEl.classList.add("error");
+    namaEl.focus();
+    return false;
+  }
+
+  if(!jabatan){
+    showToast("Jabatan wajib diisi");
+    jabatanEl.classList.add("error");
+    jabatanEl.focus();
+    return false;
+  }
+
+  if(!nohp){
+    showToast("No. HP wajib diisi");
+    nohpEl.classList.add("error");
+    nohpEl.focus();
+    return false;
+  }
+
+  // password hanya wajib saat tambah user
+  if(!editId && !password){
+    showToast("Password wajib diisi");
+    passEl.classList.add("error");
+    passEl.focus();
+    return false;
+  }
+
+  return true;
+}
+/* ================= SAVE (ADD / UPDATE) ================= */
+async function saveUser(){
+
+ if(!validateForm()) return;
+
+ const token=localStorage.getItem("token");
+ const pass=document.getElementById("password").value;
 
  const f=new FormData();
- f.append("action","addUser");
+ f.append("token",token);
+
+ if(editId){
+   f.append("action","updateuser");
+   f.append("id",editId);
+ }else{
+   f.append("action","adduser");
+ }
+
  f.append("username",username.value);
- f.append("password_hash",passHash);
  f.append("nama",nama.value);
  f.append("role",role.value);
+ f.append("jabatan",jabatan.value);
+ f.append("nohp",nohp.value);
 
- await fetch(API_URL,{method:"POST",body:f});
+ if(pass){
+   const hash=await sha256(pass);
+   f.append("password_hash",hash);
+ }
 
+ /* ===============================
+    🔴 BAGIAN YANG DIGANTI
+    =============================== */
+
+ const res = await fetch(API_URL,{method:"POST",body:f});
+ const result = await res.json();
+
+ if(!result.status){
+
+   if(result.message==="USERNAME_EXISTS"){
+     showToast("Username sudah digunakan!");
+     username.focus();
+     return;
+   }
+
+   showToast("Gagal menyimpan data");
+   return;
+ }
+
+ /* ===============================
+    ✅ JIKA BERHASIL
+    =============================== */
+
+ showToast(editId?"User berhasil diupdate":"User berhasil ditambah");
+
+ resetForm();
  loadUsers();
 }
 
-/* DELETE USER */
+/* ================= DELETE ================= */
 async function deleteUser(id){
 
- if(!confirm("Hapus user?")) return;
+ if(!confirm("Hapus user ini?")) return;
 
  const f=new FormData();
- f.append("action","deleteUser");
+ f.append("action","deleteuser");
+ f.append("token",localStorage.getItem("token"));
  f.append("id",id);
 
  await fetch(API_URL,{method:"POST",body:f});
 
+ showToast("User berhasil dihapus");
  loadUsers();
 }
 
+/* ================= RESET ================= */
+function resetForm(){
+ editId=null;
+
+ document.getElementById("formTitle").innerText="Tambah User";
+ document.querySelector("button[onclick='saveUser()']").innerText="Simpan";
+
+ username.value="";
+ nama.value="";
+ jabatan.value="";
+ nohp.value="";
+ password.value="";
+ password.disabled=false;
+ password.placeholder="Password";
+
+ role.value="USER";
+}
+/* ================= SHOW / HIDE PASSWORD ================= */
+function showHide() {
+  var inputan = document.getElementById("password");
+  if (inputan.type === "password") {
+    inputan.type = "text";
+  } else {
+    inputan.type = "password";
+  }
+} 
+
+/* INIT */
 loadUsers();
+
+/* hapus tanda merah saat user mulai mengetik */
+["username","nama","password"].forEach(id=>{
+ document.getElementById(id).addEventListener("input",e=>{
+   e.target.classList.remove("error");
+ });
+});
+
+function goAdmin(){
+  window.location.href = "admin.html";
+}
 </script>
 
 </body>
