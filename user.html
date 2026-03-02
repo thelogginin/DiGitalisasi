@@ -308,7 +308,7 @@ function onScanSuccess(decodedText){
   sendAbsensi();
 }
 /******* Send ***********/
-function sendAbsensi(){
+function sendAbsensi(forceEarly=false, alasan=""){
 
   if(!navigator.geolocation){
     alert("GPS tidak didukung");
@@ -320,7 +320,7 @@ function sendAbsensi(){
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
 
-    submitAbsensi(lat,lng,false);
+    submitAbsensi(lat,lng,forceEarly,alasan);
 
   },()=>{
     alert("Aktifkan GPS terlebih dahulu");
@@ -328,14 +328,15 @@ function sendAbsensi(){
 }
 
 /* ================= KIRIM KE GAS ================= */
-async function submitAbsensi(lat,lng,forceEarly=false){
+async function submitAbsensi(lat,lng,forceEarly=false,alasan=""){
 
   const params = new URLSearchParams();
   params.append("action","absensi");
   params.append("token",localStorage.getItem("token"));
   params.append("lat",lat);
   params.append("lng",lng);
-
+  params.append("forceEarly",forceEarly ? "1":"0");
+  params.append("alasan",alasan);
   // kirim flag konfirmasi jika sudah disetujui user
   params.append("forceEarly", forceEarly ? "1" : "0");
 
@@ -353,6 +354,28 @@ async function submitAbsensi(lat,lng,forceEarly=false){
 
   try{
     const data = JSON.parse(text);
+
+	if(data.status === "confirm"){
+
+	  const alasan = prompt(
+		data.message + "\n\nMasukkan alasan pulang cepat:"
+	  );
+
+	  if(alasan === null){
+		document.getElementById("scanStatus").innerText="Absen dibatalkan";
+		return;
+	  }
+
+	  if(alasan.trim() === ""){
+		alert("Alasan wajib diisi!");
+		return;
+	  }
+
+	  sendAbsensi(true, alasan);
+	  return;
+	}
+
+	document.getElementById("scanStatus").innerText = data.message;
 
     // ===============================
     // 🔴 JIKA SERVER MINTA KONFIRMASI
@@ -384,8 +407,10 @@ async function submitAbsensi(lat,lng,forceEarly=false){
     document.getElementById("scanStatus").innerText = "Server tidak merespon";
   }
 }
+
 </script>
 
 </body>
 </html>
+
 
