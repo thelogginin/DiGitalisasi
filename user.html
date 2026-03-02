@@ -306,27 +306,7 @@ function onScanSuccess(decodedText){
 
   sendAbsensi();
 }
-function sendAbsensi(){
-
-  if(!navigator.geolocation){
-    alert("GPS tidak didukung");
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(pos=>{
-
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
-
-    submitAbsensi(lat,lng);
-
-  },()=>{
-    alert("Aktifkan GPS terlebih dahulu");
-  });
-}
-
-/* ================= KIRIM KE GAS ================= */
-let submitting = false;
+/****** Send GS ***/
 
 async function submitAbsensi(lat,lng){
 
@@ -391,5 +371,6 @@ async function submitAbsensi(lat,lng){
 
 </body>
 </html>
+
 
 
