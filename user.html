@@ -86,7 +86,36 @@ button:hover{
 .tab-pane{
   padding:10px 5px;
 }
+/* MODAL */
+.modal{
+  display:none; /* ini yang penting */
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.5);
+  justify-content:center;
+  align-items:center;
+  z-index:999;
+}
 
+.modal-box{
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  width:90%;
+  max-width:400px;
+}
+
+.modal textarea{
+  width:100%;
+  margin:10px 0;
+  padding:8px;
+}
+
+.modal-btn{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+}
 
 /* MOBILE */
 @media(max-width:600px){
@@ -347,102 +376,91 @@ function sendAbsensi(forceEarly=false, alasan=""){
 }
 
 /* ================= KIRIM KE GAS ================= */
-async function submitAbsensi(lat,lng,forceEarly=false,alasan=""){
+async function submitAbsensi(lat, lng, forceEarly = false, alasan = "") {
 
-  const params = new URLSearchParams();
-  params.append("action","absensi");
-  params.append("token",localStorage.getItem("token"));
-  params.append("lat",lat);
-  params.append("lng",lng);
-  params.append("forceEarly",forceEarly ? "1":"0");
-  params.append("alasan",alasan);
-  // kirim flag konfirmasi jika sudah disetujui user
-  params.append("forceEarly", forceEarly ? "1" : "0");
+  // Cegah kirim berulang saat proses berjalan
+  if (confirmInProgress) return;
+  confirmInProgress = true;
 
-  const res = await fetch(API_URL,{
-    method: "POST",
-    headers:{
-      "Content-Type":"application/x-www-form-urlencoded"
-    },
-    body: params.toString(),
-    redirect: "follow"
-  });
+  try {
 
-  const text = await res.text();
-  console.log("RESPONSE:", text);
+    const params = new URLSearchParams();
+    params.append("action", "absensi");
+    params.append("token", localStorage.getItem("token"));
+    params.append("lat", lat);
+    params.append("lng", lng);
+    params.append("forceEarly", forceEarly ? "1" : "0");
+    params.append("alasan", alasan);
 
-  try{
-    const data = JSON.parse(text);
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: params.toString()
+    });
 
-	if(data.status === "confirm"){
-
-	  const alasan = prompt(
-		data.message + "\n\nMasukkan alasan pulang cepat:"
-	  );
-
-	  if(alasan === null){
-		document.getElementById("scanStatus").innerText="Absen dibatalkan";
-		return;
-	  }
-
-	  if(alasan.trim() === ""){
-		alert("Alasan wajib diisi!");
-		return;
-	  }
-
-	  sendAbsensi(true, alasan);
-	  return;
-	}
-
-	document.getElementById("scanStatus").innerText = data.message;
+    const data = await res.json();
 
     // ===============================
     // 🔴 JIKA SERVER MINTA KONFIRMASI
     // ===============================
-	if(data.status === "confirm"){
+    if (data.status === "confirm" && !forceEarly) {
 
-	  // simpan koordinat sementara
-	  tempLat = lat;
-	  tempLng = lng;
+      // simpan koordinat sementara
+      tempLat = lat;
+      tempLng = lng;
 
-	  // tampilkan modal
-	  document.getElementById("modalEarly").style.display="flex";
-	  return;
-	}
-	function batalEarly(){
-	  document.getElementById("modalEarly").style.display="none";
-	  document.getElementById("scanStatus").innerText="Absen dibatalkan";
-	  startScanner();
-	}
+      // kosongkan textarea
+      document.getElementById("alasanInput").value = "";
 
-	function setujuEarly(){
+      // tampilkan modal
+      document.getElementById("modalEarly").style.display = "flex";
 
-	  const alasan = document.getElementById("alasanInput").value.trim();
+      confirmInProgress = false;
+      return;
+    }
 
-	  if(!alasan){
-		alert("Alasan wajib diisi!");
-		return;
-	  }
-
-	  document.getElementById("modalEarly").style.display="none";
-
-	  // kirim ulang sebagai final
-	  submitAbsensi(tempLat,tempLng,true,alasan);
-	}
     // ===============================
-    // RESPONSE NORMAL
+    // ✅ RESPONSE NORMAL / FINAL
     // ===============================
-    confirmInProgress = false;
     document.getElementById("scanStatus").innerText = data.message;
 
-  }catch(e){
+  } catch (err) {
+
+    console.error(err);
     document.getElementById("scanStatus").innerText = "Server tidak merespon";
+
+  } finally {
+    confirmInProgress = false;
   }
 }
+
+function batalEarly(){
+  document.getElementById("modalEarly").style.display="none";
+  document.getElementById("scanStatus").innerText="Absen dibatalkan";
+  startScanner();
+}
+
+function setujuEarly(){
+
+  const alasan = document.getElementById("alasanInput").value.trim();
+
+  if(!alasan){
+    alert("Alasan wajib diisi!");
+    return;
+  }
+
+  document.getElementById("modalEarly").style.display="none";
+
+  submitAbsensi(tempLat,tempLng,true,alasan);
+}
+
 </script>
 
 </body>
 </html>
+
 
 
 
