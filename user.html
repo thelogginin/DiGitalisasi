@@ -155,14 +155,31 @@ button:hover{
 
 <div class="tab-content">
 
-  <!-- PROFIL -->
+ <!-- PROFIL -->
 	<div id="tabProfil" class="tab-pane">
 	  <h3>Scan QR Absensi</h3>
+	  <!-- KAMERA -->
 	  <div id="reader" style="width:300px"></div>
+		<!-- Konfirmasi -->
+		<div id="modalEarly" class="modal">
+		  <div class="modal-box">
+			<h3>Konfirmasi Pulang Cepat</h3>
+
+			<textarea id="alasanInput"
+			  placeholder="Masukkan alasan pulang cepat..."
+			  rows="4"></textarea>
+
+			<div class="modal-btn">
+			  <button onclick="batalEarly()">Batal</button>
+			  <button onclick="setujuEarly()">Setujui</button>
+			</div>
+		  </div>
+		</div>
 	  <p id="scanStatus">Menunggu scan...</p>
 	  <button onclick="startScanner()">Aktifkan Kamera</button>
 	  <button onclick="stopScanner()">Stop Kamera</button>
 	</div>
+
 
   <!-- RIWAYAT -->
   <div id="tabRiwayat" class="tab-pane" style="display:none">
@@ -259,6 +276,8 @@ loadProfile();
 let html5QrCode;
 let scanning = false;
 let confirmInProgress = false; // mencegah loop kirim ulang
+let tempLat = null;
+let tempLng = null;
 
 /* ================= START SCANNER ================= */
 function startScanner(){
@@ -380,23 +399,36 @@ async function submitAbsensi(lat,lng,forceEarly=false,alasan=""){
     // ===============================
     // 🔴 JIKA SERVER MINTA KONFIRMASI
     // ===============================
-    if(data.status === "confirm"){
+	if(data.status === "confirm"){
 
-      if(confirm(data.message)){   // user tekan OK
-        confirmInProgress = true;
+	  // simpan koordinat sementara
+	  tempLat = lat;
+	  tempLng = lng;
 
-        // kirim ulang sebagai FINAL
-        submitAbsensi(lat,lng,true);
-        return;
-      }else{
-        // user batal
-        confirmInProgress = false;
-        document.getElementById("scanStatus").innerText="Absen dibatalkan";
-        startScanner();
-        return;
-      }
-    }
+	  // tampilkan modal
+	  document.getElementById("modalEarly").style.display="flex";
+	  return;
+	}
+	function batalEarly(){
+	  document.getElementById("modalEarly").style.display="none";
+	  document.getElementById("scanStatus").innerText="Absen dibatalkan";
+	  startScanner();
+	}
 
+	function setujuEarly(){
+
+	  const alasan = document.getElementById("alasanInput").value.trim();
+
+	  if(!alasan){
+		alert("Alasan wajib diisi!");
+		return;
+	  }
+
+	  document.getElementById("modalEarly").style.display="none";
+
+	  // kirim ulang sebagai final
+	  submitAbsensi(tempLat,tempLng,true,alasan);
+	}
     // ===============================
     // RESPONSE NORMAL
     // ===============================
@@ -407,10 +439,10 @@ async function submitAbsensi(lat,lng,forceEarly=false,alasan=""){
     document.getElementById("scanStatus").innerText = "Server tidak merespon";
   }
 }
-
 </script>
 
 </body>
 </html>
+
 
 
