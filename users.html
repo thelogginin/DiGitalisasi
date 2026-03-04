@@ -188,11 +188,9 @@ async function loadUsers(){
  j.data.forEach(u=>{
   tbody.innerHTML+=`
   <tr>
-   <td>${u.username}</td>
    <td>${u.nama}</td>
    <td>${u.jabatan || '-'}</td>
    <td>${u.nohp || '-'}</td>
-   <td>${u.role}</td>
    <td>${u.status}</td>
    <td>
      <button onclick="editUser(
@@ -405,6 +403,7 @@ function goAdmin(){
 
 </body>
 </html>
+
 
 
 
