@@ -125,9 +125,8 @@ input.error{
 		</div>
 		<input type="checkbox" onclick="showHide()"> Tampilkan Password
 		<br><br>
-		<button id="btnSave" type="button" onclick="saveUser(event)">Simpan</button>
-		
-		<button type="button" onclick="resetForm()">Batal</button>
+		<button onclick="saveUser()">Simpan</button>
+		<button onclick="resetForm()">Reset</button>
 	</div>
 </div>
 
@@ -186,45 +185,39 @@ async function loadUsers(){
  const r=await fetch(API_URL,{method:"POST",body:f});
  const j=await r.json();
 
- if(!j.status){
-   showToast("Session berakhir, silakan login ulang");
-   localStorage.clear();
-   window.location="index.html";
-   return;
- }
-
  const tbody=document.getElementById("tbody");
  tbody.innerHTML="";
 
  j.data.forEach(u=>{
-   tbody.innerHTML+=`
-   <tr>
-    <td>${u.username}</td>
-    <td>${u.nama}</td>
-    <td>${u.jabatan || '-'}</td>
-    <td>${u.nohp || '-'}</td>
-    <td>${u.role}</td>
-    <td>${u.status}</td>
-    <td>
-      <button onclick="editUser(
-        '${u.id}',
-        '${u.username}',
-        '${u.nama}',
-        '${u.jabatan || ''}',
-        '${u.nohp || ''}',
-        '${u.role}'
-      )">Edit</button>
-      <button onclick="deleteUser('${u.id}')">Hapus</button>
-    </td>
-   </tr>`;
+  tbody.innerHTML+=`
+  <tr>
+   <td>${u.username}</td>
+   <td>${u.nama}</td>
+   <td>${u.jabatan || '-'}</td>
+   <td>${u.nohp || '-'}</td>
+   <td>${u.role}</td>
+   <td>${u.status}</td>
+   <td>
+     <button onclick="editUser(
+       '${u.id}',
+       '${u.username}',
+       '${u.nama}',
+       '${u.jabatan || ''}',
+       '${u.nohp || ''}',
+       '${u.role}'
+     )">Edit</button>
+     <button onclick="deleteUser('${u.id}')">Hapus</button>
+   </td>
+  </tr>`;
  });
 }
+
 /* ================= EDIT ================= */
 function editUser(id,username,nama,jabatan,nohp,role){
  editId=id;
 
  document.getElementById("formTitle").innerText="Edit User";
- document.getElementById("btnSave").innerText="Update";
+ document.querySelector("button[onclick='saveUser()']").innerText="Update";
 
  document.getElementById("username").value=username;
  document.getElementById("nama").value=nama;
@@ -298,8 +291,7 @@ function validateForm(){
   return true;
 }
 /* ================= SAVE (ADD / UPDATE) ================= */
-async function saveUser(e){
-  if(e) e.preventDefault();
+async function saveUser(){
 
  if(!validateForm()) return;
 
@@ -352,8 +344,8 @@ async function saveUser(e){
 
  showToast(editId?"User berhasil diupdate":"User berhasil ditambah");
 
-	resetForm();
-	await loadUsers();
+ resetForm();
+ loadUsers();
 }
 
 /* ================= DELETE ================= */
@@ -366,23 +358,18 @@ async function deleteUser(id){
  f.append("token",localStorage.getItem("token"));
  f.append("id",id);
 
- const res = await fetch(API_URL,{method:"POST",body:f});
- const result = await res.json();
-
- if(!result.status){
-   showToast("Gagal menghapus user");
-   return;
- }
+ await fetch(API_URL,{method:"POST",body:f});
 
  showToast("User berhasil dihapus");
- await loadUsers();
+ loadUsers();
 }
+
 /* ================= RESET ================= */
 function resetForm(){
  editId=null;
 
  document.getElementById("formTitle").innerText="Tambah User";
- document.getElementById("btnSave").innerText="Simpan";
+ document.querySelector("button[onclick='saveUser()']").innerText="Simpan";
 
  username.value="";
  nama.value="";
